@@ -1,0 +1,122 @@
+<html>
+<head>
+  <title>Socket IO Demo</title>
+  <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+  <script src="socket.io/socket.io.js"></script>
+  <script type="text/javascript">
+  	var KEY_DOWN	= 40;
+	var KEY_UP		= 38;
+	var KEY_LEFT	= 37;
+	var KEY_RIGHT	= 39;
+  	
+  	var my_timer;
+  	var _x = 0;
+  	var _y = 0;
+  	
+  	var _ctx;
+  	
+    $(document).ready(function () {
+    	
+      	var sock = io.connect();
+      	
+      	sock.on('connect', function() {
+      		my_timer = setInterval(function () {
+    			sock.send(JSON.stringify({ "x": _x, "y": _y }));
+  			}, 33);
+	      
+	      	sock.on('message', function (data) {
+	        	var obj = JSON.parse(data);
+		        if(obj.message) {
+		          clear();
+		          $('#message').text(obj.message);
+		          for(var i=0;i<obj.message.length;i++) {
+		          	draw(obj.message[i].id, obj.message[i].x, obj.message[i].y);
+		          }
+		        }
+		      });
+	      
+      	});
+      	
+      	
+      	$("#poke").click(function() {
+	    	_x += 2;
+	    	_y += 2;
+	    	
+	    	$('xpos').append(""+String(_x));
+	    	$('ypos').append(""+String(_y));
+      	});
+      	
+      	document.onkeydown = applyKey;
+      	
+      	_ctx = document.getElementById('canvas').getContext('2d');
+    });
+    
+    function applyKey (_event_){
+		
+		// --- Retrieve event object from current web explorer
+		var winObj = checkEventObj(_event_);
+		
+		var intKeyCode = winObj.keyCode;
+			
+		switch ( intKeyCode ) {
+			case KEY_DOWN:
+				if(_y+1 < 301) {
+					_y += 1;
+				}
+				break;
+			case KEY_UP:
+				if(_y-1 > -1) {
+					_y -= 1;
+				}
+				break;
+			case KEY_LEFT:
+				if(_x-1 > -1) {
+					_x -= 1;	
+				}
+				break;
+			case KEY_RIGHT:
+				if(_x+1 < 401) {
+					_x += 1;	
+				}
+				break;
+			default: alert("Cette touche n'est pas prise en compte");
+		}
+		
+	}
+	
+	function checkEventObj ( _event_ ){
+		// --- IE explorer
+		if ( window.event )
+			return window.event;
+		// --- Netscape and other explorers
+		else
+			return _event_;
+	}
+	
+	function draw(id, x, y) {
+		_ctx.fillStyle = "rgb(0,0,255)";		_ctx.fillRect(x,y,20,20);
+		
+		_ctx.fillStyle = "rgb(255,255,255)";
+		_ctx.font="20px sans-serif";		_ctx.fillText("" + String(id), x+5, y+15);
+	}
+	
+	function clear() {
+		_ctx.fillStyle = "rgb(211, 211, 211)";		_ctx.fillRect(0,0,400,300);
+	}
+  </script>
+</head>
+<body>
+  <div>
+    <h2>Test POC RPG</h2>
+    <label for="xpos">Pos X</label>
+    <div id="xpos"></div>
+    <label for="ypos">Pos Y</label>
+    <div id="ypos"></div>
+    <label for="message">Message</label>
+    <div id="message"></div>
+    <p><button id="poke">Send poke !</button></p>
+    <canvas id="canvas" width="400" height="300">		Your browser doesn't support the HTML5 element canvas.	</canvas>
+	<div id="log"></div>
+  </div>
+</body>
+</html>
